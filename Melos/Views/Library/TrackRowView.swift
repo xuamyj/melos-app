@@ -4,45 +4,47 @@ struct TrackRowView: View {
     let track: Track
     let isSelected: Bool
     let isSelecting: Bool
+    let onTap: () -> Void
     let onAddToQueue: () -> Void
-    let onPlayNext: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            if isSelecting {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundColor(isSelected ? .melosPrimary : .secondary)
+            // --- Tappable content area (plays the track or toggles selection) ---
+            HStack(spacing: 12) {
+                if isSelecting {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundColor(isSelected ? .melosPrimary : .secondary)
+                }
+
+                Circle()
+                    .fill(TrackColor.forIndex(track.colorIndex).color)
+                    .frame(width: 36, height: 36)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(track.title)
+                        .font(.body.weight(.medium))
+                        .lineLimit(1)
+
+                    Text(formatDuration(track.duration))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onTap()
             }
 
-            Circle()
-                .fill(TrackColor.forIndex(track.colorIndex).color)
-                .frame(width: 36, height: 36)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(track.title)
-                    .font(.body.weight(.medium))
-                    .lineLimit(1)
-
-                Text(formatDuration(track.duration))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-
-            Spacer()
-
+            // --- Menu button (lives outside the tap gesture) ---
             if !isSelecting {
                 Menu {
                     Button {
                         onAddToQueue()
                     } label: {
                         Label("Add to Queue", systemImage: "text.append")
-                    }
-
-                    Button {
-                        onPlayNext()
-                    } label: {
-                        Label("Play Next", systemImage: "text.insert")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -53,7 +55,6 @@ struct TrackRowView: View {
             }
         }
         .padding(.vertical, 4)
-        .contentShape(Rectangle())
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {

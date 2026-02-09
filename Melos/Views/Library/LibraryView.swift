@@ -31,20 +31,17 @@ struct LibraryView: View {
                                 track: track,
                                 isSelected: selectedIDs.contains(track.id),
                                 isSelecting: isSelecting,
+                                onTap: {
+                                    if isSelecting {
+                                        toggleSelection(track.id)
+                                    } else {
+                                        playTrack(track)
+                                    }
+                                },
                                 onAddToQueue: {
                                     queueManager.addToQueue(trackID: track.id)
-                                },
-                                onPlayNext: {
-                                    queueManager.addToQueueNext(trackID: track.id)
                                 }
                             )
-                            .onTapGesture {
-                                if isSelecting {
-                                    toggleSelection(track.id)
-                                } else {
-                                    playTrack(track)
-                                }
-                            }
                         }
                         .onDelete(perform: deleteTracks)
                     }
@@ -111,12 +108,16 @@ struct LibraryView: View {
     }
 
     private func playTrack(_ track: Track) {
-        let sorted = libraryManager.sortedTracks
-        let trackIDs = sorted.map { $0.id }
-        let startIndex = sorted.firstIndex(where: { $0.id == track.id }) ?? 0
-        queueManager.replaceQueue(with: trackIDs, startingAt: startIndex)
+        // If the track is already in the queue, jump to it
+        if let existingIndex = queueManager.items.firstIndex(where: { $0.trackID == track.id }) {
+            queueManager.jumpTo(index: existingIndex)
+        } else {
+            // Otherwise append it and jump to the end
+            queueManager.addToQueue(trackID: track.id)
+            queueManager.jumpTo(index: queueManager.count - 1)
+        }
         audioEngine.playCurrentQueueItem()
-        selectedTab = 1 // Switch to Now Playing tab
+        selectedTab = 1
     }
 
     private func toggleSelection(_ id: UUID) {

@@ -24,7 +24,7 @@ class AudioEngine: NSObject, ObservableObject {
     private var audioPlayer: AVAudioPlayer?
     private var displayLink: CADisplayLink?
     private var lastSkipBackwardTime: Date = .distantPast
-    private let doubleTapThreshold: TimeInterval = 0.4
+    private let doubleTapThreshold: TimeInterval = 0.8
 
     // MARK: - Now Playing Service
 
