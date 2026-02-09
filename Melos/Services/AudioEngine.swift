@@ -26,9 +26,9 @@ class AudioEngine: NSObject, ObservableObject {
     private var lastSkipBackwardTime: Date = .distantPast
     private let doubleTapThreshold: TimeInterval = 0.4
 
-    // MARK: - Now Playing Service (set in checkpoint 8)
+    // MARK: - Now Playing Service
 
-    var nowPlayingService: AnyObject? // Will be typed as NowPlayingService later
+    var nowPlayingService: NowPlayingService?
 
     // MARK: - Setup
 
@@ -99,16 +99,30 @@ class AudioEngine: NSObject, ObservableObject {
             player.play()
             isPlaying = true
         }
+        updateNowPlayingState()
     }
 
     func pause() {
         audioPlayer?.pause()
         isPlaying = false
+        updateNowPlayingState()
     }
 
     func resume() {
         audioPlayer?.play()
         isPlaying = true
+        updateNowPlayingState()
+    }
+
+    private func updateNowPlayingState() {
+        if let track = currentTrack {
+            nowPlayingService?.updateNowPlayingInfo(
+                track: track,
+                currentTime: currentTime,
+                duration: duration,
+                isPlaying: isPlaying
+            )
+        }
     }
 
     func stop() {
@@ -119,6 +133,7 @@ class AudioEngine: NSObject, ObservableObject {
         currentTime = 0
         duration = 0
         stopProgressUpdates()
+        nowPlayingService?.clearNowPlayingInfo()
     }
 
     // MARK: - Seeking
@@ -201,6 +216,16 @@ class AudioEngine: NSObject, ObservableObject {
     @objc private func updateProgress() {
         guard let player = audioPlayer else { return }
         currentTime = player.currentTime
+
+        // Update lock screen / Control Center info
+        if let track = currentTrack {
+            nowPlayingService?.updateNowPlayingInfo(
+                track: track,
+                currentTime: currentTime,
+                duration: duration,
+                isPlaying: isPlaying
+            )
+        }
     }
 
     // MARK: - Notifications
