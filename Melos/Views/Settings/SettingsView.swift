@@ -3,10 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var audioEngine: AudioEngine
     @EnvironmentObject var queueManager: QueueManager
-    @State private var skipIntervalSeconds: Int = {
-        PersistenceService.load(AppSettings.self, from: PersistenceService.settingsURL)?.skipIntervalSeconds
-            ?? AppSettings.default.skipIntervalSeconds
-    }()
+    @State private var skipIntervalSeconds: Int = AppSettings.default.skipIntervalSeconds
     @State private var showClearQueueConfirmation = false
 
     var body: some View {
@@ -61,5 +58,10 @@ struct SettingsView: View {
             }
         }
         .navigationViewStyle(.stack)
+        .onAppear {
+            if let settings = PersistenceService.load(AppSettings.self, from: PersistenceService.settingsURL) {
+                skipIntervalSeconds = settings.skipIntervalSeconds
+            }
+        }
     }
 }

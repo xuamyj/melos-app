@@ -30,6 +30,11 @@ class AudioEngine: NSObject, ObservableObject {
 
     var nowPlayingService: NowPlayingService?
 
+    deinit {
+        displayLink?.invalidate()
+        NotificationCenter.default.removeObserver(self)
+    }
+
     // MARK: - Setup
 
     func setupAudioSession() {
