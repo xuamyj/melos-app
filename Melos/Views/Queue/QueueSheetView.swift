@@ -3,14 +3,15 @@ import SwiftUI
 struct QueueSheetView: View {
     @EnvironmentObject var queueManager: QueueManager
     @EnvironmentObject var libraryManager: LibraryManager
+    @EnvironmentObject var audioEngine: AudioEngine
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
         NavigationView {
-            VStack {
+            Group {
                 if queueManager.isEmpty {
-                    Spacer()
                     VStack(spacing: 12) {
+                        Spacer()
                         Image(systemName: "list.bullet")
                             .font(.system(size: 40))
                             .foregroundColor(.secondary)
@@ -19,18 +20,42 @@ struct QueueSheetView: View {
                         Text("Play a track from Library to start a queue")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Spacer()
                     }
-                    Spacer()
                 } else {
-                    Text("\(queueManager.count) item\(queueManager.count == 1 ? "" : "s") in queue")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding(.top, 8)
+                    List {
+                        ForEach(Array(queueManager.items.enumerated()), id: \.element.id) { index, item in
+                            if let track = libraryManager.track(for: item.trackID) {
+                                QueueItemRowView(
+                                    position: index + 1,
+                                    track: track,
+                                    isCurrent: index == queueManager.currentIndex
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    queueManager.jumpTo(index: index)
+                                    audioEngine.playCurrentQueueItem()
+                                }
+                            }
+                        }
+                        .onDelete { offsets in
+                            queueManager.removeFromQueue(at: offsets)
+                        }
+                        .onMove { source, destination in
+                            queueManager.moveItems(from: source, to: destination)
+                        }
+                    }
+                    .listStyle(.plain)
                 }
             }
             .navigationTitle("Queue")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if !queueManager.isEmpty {
+                        EditButton()
+                    }
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
