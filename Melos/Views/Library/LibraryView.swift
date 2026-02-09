@@ -1,7 +1,10 @@
 import SwiftUI
 
 struct LibraryView: View {
+    @Binding var selectedTab: Int
     @EnvironmentObject var libraryManager: LibraryManager
+    @EnvironmentObject var queueManager: QueueManager
+    @EnvironmentObject var audioEngine: AudioEngine
     @State private var showingDocumentPicker = false
     @State private var isSelecting = false
     @State private var selectedIDs: Set<UUID> = []
@@ -29,17 +32,17 @@ struct LibraryView: View {
                                 isSelected: selectedIDs.contains(track.id),
                                 isSelecting: isSelecting,
                                 onAddToQueue: {
-                                    // Will be wired in checkpoint 7
+                                    queueManager.addToQueue(trackID: track.id)
                                 },
                                 onPlayNext: {
-                                    // Will be wired in checkpoint 7
+                                    queueManager.addToQueueNext(trackID: track.id)
                                 }
                             )
                             .onTapGesture {
                                 if isSelecting {
                                     toggleSelection(track.id)
                                 } else {
-                                    // Will play track in checkpoint 6
+                                    playTrack(track)
                                 }
                             }
                         }
@@ -105,6 +108,15 @@ struct LibraryView: View {
             }
         }
         .navigationViewStyle(.stack)
+    }
+
+    private func playTrack(_ track: Track) {
+        let sorted = libraryManager.sortedTracks
+        let trackIDs = sorted.map { $0.id }
+        let startIndex = sorted.firstIndex(where: { $0.id == track.id }) ?? 0
+        queueManager.replaceQueue(with: trackIDs, startingAt: startIndex)
+        audioEngine.playCurrentQueueItem()
+        selectedTab = 1 // Switch to Now Playing tab
     }
 
     private func toggleSelection(_ id: UUID) {
